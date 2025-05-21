@@ -47,16 +47,22 @@ def applications_starting():
         st.subheader("Book Publishe Per Year")
         book_year = filtered_df["PublishedYear"].value_counts().sort_index()
         st.line_chart(book_year, use_container_width=True)
+    
+    genre_df = filtered_df.groupby("Genre")["Price"].sum().reset_index()
+    fig = px.pie(genre_df, values="Price", names="Genre", title="Genre wise Price")
+    st.plotly_chart(fig, use_container_width=True)
 
-    fig, ax = pit.subplots()
-    sus.histplot(filtered_df["Price"], bins=10, kde=True, ax=ax)
-    st.pyplot(fig, use_container_width=True)
+    with st.expander("plotting histogram"):
+        fig, ax = pit.subplots()
+        sus.histplot(filtered_df["Price"], bins=10, kde=True, ax=ax)
+        st.pyplot(fig, use_container_width=True)
 
-    st.subheader("📌 Scatterplot: Pages vs. Price")
-    fig2, ax2 = pit.subplots()
-    sus.scatterplot(data=filtered_df, x="Pages", y="Price", hue="Genre", palette="tab10", ax=ax2)
-    ax2.set_title("Pages vs. Price")
-    st.pyplot(fig2)
+    with st.expander("plotting scatter"):
+        st.subheader("📌 Scatterplot: Pages vs. Price")
+        fig2, ax2 = pit.subplots()
+        sus.scatterplot(data=filtered_df, x="Pages", y="Price", hue="Genre", palette="tab10", ax=ax2)
+        ax2.set_title("Pages vs. Price")
+        st.pyplot(fig2)
 
 
 applications_starting()

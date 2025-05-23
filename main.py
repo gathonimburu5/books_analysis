@@ -7,6 +7,13 @@ import json
 import os
 import warnings
 
+def bubble_sort(seq):
+    n = len(seq)
+    for i in range(n):
+        for j in range(n-1-i):
+            if seq[j] > seq[j+1]:
+                seq[j], seq[j+1] = seq[j+1], seq[j]
+
 def load_books_file(file):
     try:
         return pd.read_csv(file)
@@ -37,20 +44,26 @@ def applications_starting():
     filtered_df = df[df["Genre"].isin(genre_filter) & df["PublishedYear"].between(*year_range) & df["Price"].between(*price_range)]
     #st.dataframe(filtered_df)
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         st.subheader("Genre Distribution")
         genre_count = filtered_df["Genre"].value_counts()
         st.bar_chart(genre_count, use_container_width=True)
 
     with col2:
-        st.subheader("Book Publishe Per Year")
+        st.subheader("Book Published Per Year")
         book_year = filtered_df["PublishedYear"].value_counts().sort_index()
         st.line_chart(book_year, use_container_width=True)
-    
-    genre_df = filtered_df.groupby("Genre")["Price"].sum().reset_index()
-    fig = px.pie(genre_df, values="Price", names="Genre", title="Genre wise Price")
-    st.plotly_chart(fig, use_container_width=True)
+
+    with col3:
+        st.subheader("Genre wise Price")
+        genre_df = filtered_df.groupby("Genre")["Price"].sum().reset_index()
+        fig = px.pie(genre_df, values="Price", names="Genre", title="")
+        st.plotly_chart(fig, use_container_width=True)
+
+    listing = [24, 32, 45, 12, 8, 16, 65, 14, 48]
+    sort_list = bubble_sort(listing)
+    st.write(sort_list)
 
     with st.expander("plotting histogram"):
         fig, ax = pit.subplots()

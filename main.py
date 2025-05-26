@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import seaborn as sus
+import numpy as np
 import matplotlib.pyplot as pit
 import json
 import os
@@ -13,6 +14,33 @@ def bubble_sort(seq):
         for j in range(n-1-i):
             if seq[j] > seq[j+1]:
                 seq[j], seq[j+1] = seq[j+1], seq[j]
+    return seq
+
+def selection_sort(array):
+    n = len(array)
+    for i in range(n):
+        min_idx = i
+        for j in range(i+1, n):
+            if array[j] < array[min_idx]:
+                min_idx = j
+        array[i], array[min_idx] = array[min_idx], array[i]
+    return array
+
+def plot_checker(size=8):
+    board = np.indices((size, size)).sum(axis=0) % 2
+    
+    # pit.figure(figsize=(6,6))
+    # pit.imshow(board, cmap="gray", interpolation="nearest")
+    # pit.xticks([])
+    # pit.yticks([])
+    # pit.title("Checker Board Pattern", fontsize=14, fontweight="bold")
+
+    fig, ax = pit.subplots(figsize=(6, 6))
+    ax.imshow(board, cmap="gray", interpolation="nearest")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("Checker Board Pattern", fontsize=14, fontweight="bold")
+    st.pyplot(fig)
 
 def load_books_file(file):
     try:
@@ -60,10 +88,17 @@ def applications_starting():
         genre_df = filtered_df.groupby("Genre")["Price"].sum().reset_index()
         fig = px.pie(genre_df, values="Price", names="Genre", title="")
         st.plotly_chart(fig, use_container_width=True)
+    
+    with st.expander("Checker Board"):
+        plot_checker(8)
 
-    listing = [24, 32, 45, 12, 8, 16, 65, 14, 48]
-    sort_list = bubble_sort(listing)
-    st.write(sort_list)
+    with st.expander("Sorting Out List"):
+        listing = [24, 32, 45, 12, 8, 16, 65, 14, 48]
+        st.write("List before sort: ", listing)
+        sort_list = bubble_sort(listing)
+        st.write("List after bubble sort: ", sort_list)
+        select_list = selection_sort(listing)
+        st.write("List after selection sort: ", select_list)
 
     with st.expander("plotting histogram"):
         fig, ax = pit.subplots()

@@ -4,6 +4,7 @@ import plotly.express as px
 import seaborn as sus
 import numpy as np
 import matplotlib.pyplot as pit
+import yfinance as yf
 import json
 import os
 import warnings
@@ -26,15 +27,34 @@ def selection_sort(array):
         array[i], array[min_idx] = array[min_idx], array[i]
     return array
 
+@st.cache_data
+def fetch_data(ticker, start, end):
+    return yf.download(ticker, start=start, end=end)
+
+def sma_strategy(data, short_window, long_window):
+    data['SMA_Short'] = data['Close'].rolling(window=short_window).mean()
+    data['SMA_Long'] = data['Close'].rolling(window=long_window).mean()
+    data['Signal'] = 0
+    #data.loc[short_window:, 'Signal'] = np.where(data['SMA_Short'][short_window:] > data['SMA_Long'][short_window:], 1, 0)
+    data.iloc[short_window:, data.columns.get_loc('Signal')] = np.where(data['SMA_Short'].iloc[short_window:] > data['SMA_Long'].iloc[short_window:], 1, 0)
+    data['Position'] = data['Signal'].diff()
+    return data
+
+def plot_signals(data, short, long):
+    fig, ax = pit.subplots(figsize=(14, 7))
+    ax.plot(data['Close'], label='Close Price', alpha=0.5)
+    ax.plot(data['SMA_Short'], label=f'SMA {short}', alpha=0.75)
+    ax.plot(data['SMA_Long'], label=f'SMA {long}', alpha=0.75)
+    # Plot Buy signals
+    ax.plot(data[data['Position'] == 1].index, data['SMA_Short'][data['Position'] == 1], '^', markersize=10, color='green', label='Buy Signal')
+    # Plot Sell signals
+    ax.plot(data[data['Position'] == -1].index, data['SMA_Short'][data['Position'] == -1], 'v', markersize=10, color='red', label='Sell Signal')
+    ax.set_title('SMA Crossover Strategy')
+    ax.legend()
+    return fig
+
 def plot_checker(size=8):
     board = np.indices((size, size)).sum(axis=0) % 2
-    
-    # pit.figure(figsize=(6,6))
-    # pit.imshow(board, cmap="gray", interpolation="nearest")
-    # pit.xticks([])
-    # pit.yticks([])
-    # pit.title("Checker Board Pattern", fontsize=14, fontweight="bold")
-
     fig, ax = pit.subplots(figsize=(6, 6))
     ax.imshow(board, cmap="gray", interpolation="nearest")
     ax.set_xticks([])
@@ -111,6 +131,24 @@ def applications_starting():
         sus.scatterplot(data=filtered_df, x="Pages", y="Price", hue="Genre", palette="tab10", ax=ax2)
         ax2.set_title("Pages vs. Price")
         st.pyplot(fig2)
+
+    ticker = st.sidebar.text_input("Ticker Symbol", value='AAPL')
+    start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2020-01-01"))
+    end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2024-01-01"))
+    short_window = st.sidebar.slider("Short SMA Window", 5, 100, 50)
+    long_window = st.sidebar.slider("Long SMA Window", 50, 300, 200)
+
+    data = fetch_data(ticker, start_date, end_date)
+    if data.empty:
+        st.warning("No data found for the selected ticker and date range.")
+
+    else:
+        data = sma_strategy(data, short_window, long_window)
+        st.pyplot(plot_signals(data, short_window, long_window))
+        st.subheader("📊 Data Preview")
+        st.dataframe(data.tail(10))
+
+
 
 
 applications_starting()
